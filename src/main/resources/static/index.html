@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeFlow — Every Keystroke Counts | Premium Typing Speed Test</title>
+    <meta name="description" content="TypeFlow is a premium typing speed test and performance analytics platform featuring real-time typing metrics, 24-hour rolling leaderboards, and interactive keyboard heatmaps.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    
+    <!-- Application Stylesheet -->
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation Bar -->
+    <header class="navbar" id="main-nav">
+        <div class="nav-container">
+            <a href="#home" class="nav-brand" id="brand-logo">
+                <span class="brand-icon">⚡</span>
+                <span class="brand-text">TypeFlow<span class="brand-dot">.</span></span>
+            </a>
+
+            <nav class="nav-links">
+                <a href="#home" class="nav-link active" id="nav-link-home">Home</a>
+                <a href="#test" class="nav-link" id="nav-link-test">Typing Test</a>
+                <a href="#leaderboard" class="nav-link" id="nav-link-leaderboard">Leaderboard</a>
+                <a href="#stats" class="nav-link" id="nav-link-stats" style="display: none;">My Statistics</a>
+                <a href="#about" class="nav-link" id="nav-link-about">About</a>
+            </nav>
+
+            <div class="nav-actions">
+                <!-- Theme and Audio Toggles -->
+                <button class="icon-btn" id="btn-sound-toggle" title="Toggle Mechanical Sound Effects">🔊</button>
+                <button class="icon-btn" id="btn-theme-toggle" title="Toggle Light/Dark Theme">☀️</button>
+
+                <!-- Guest State Buttons -->
+                <div id="nav-guest-actions" style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-outline" id="btn-login-trigger">Sign In</button>
+                    <button class="btn btn-sm btn-mint" id="btn-register-trigger">Join Free</button>
+                </div>
+
+                <!-- Logged In State User Menu -->
+                <div id="nav-user-actions" style="display: none; align-items: center; gap: 0.75rem;">
+                    <a href="#stats" class="user-menu-badge" style="text-decoration: none;">
+                        <span class="user-avatar-circle" id="nav-user-avatar">U</span>
+                        <span class="user-username" id="nav-user-name">User</span>
+                    </a>
+                    <button class="btn btn-xs btn-outline" id="btn-logout" title="Sign Out">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Application Views Container -->
+    <main class="main-wrapper">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: HOME / LANDING PAGE & DASHBOARD    -->
+        <!-- ========================================== -->
+        <section id="view-home" class="app-view active">
+            <div class="hero-section">
+                <div class="hero-tagline-pill">
+                    <span>✨</span> College Microproject &bull; Every Keystroke Counts
+                </div>
+                <h1 class="hero-title">
+                    Find your flow.<br>
+                    <span class="text-gradient">Master your speed.</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Test your typing speed, discover your accuracy, and compete with typists around the world on our rolling 24-hour leaderboard.
+                </p>
+                <div class="hero-cta-group">
+                    <button class="btn btn-lg btn-mint" id="btn-hero-start">
+                        <span>⌨️ Start Typing</span>
+                    </button>
+                    <a href="#leaderboard" class="btn btn-lg btn-outline">
+                        <span>🏆 View 24h Leaderboard</span>
+                    </a>
+                </div>
+
+                <!-- 3 Test Mode Cards -->
+                <div class="hero-modes-grid">
+                    <!-- Mode 1: 30s Quick Sprint -->
+                    <div class="hero-mode-card" data-duration="30" id="card-mode-30">
+                        <div class="mode-icon">⚡</div>
+                        <h3 class="mode-title">Quick Sprint</h3>
+                        <div class="mode-duration-tag">30 Seconds Challenge</div>
+                        <p class="mode-desc">A short, fast-paced typing challenge ideal for rapid warmups and reflex training.</p>
+                        <button class="btn btn-sm btn-outline card-action-btn">Start 30s Sprint</button>
+                    </div>
+
+                    <!-- Mode 2: 1 Minute Classic (Recommended Default) -->
+                    <div class="hero-mode-card card-recommended" data-duration="60" id="card-mode-60">
+                        <div class="card-badge-top">Recommended</div>
+                        <div class="mode-icon">🎯</div>
+                        <h3 class="mode-title">Classic Test</h3>
+                        <div class="mode-duration-tag">1 Minute Standard</div>
+                        <p class="mode-desc">The industry-standard typing benchmark providing an optimal balance of pure speed and precision.</p>
+                        <button class="btn btn-sm btn-mint card-action-btn">Start 1 Min Test</button>
+                    </div>
+
+                    <!-- Mode 3: 2 Minutes Endurance -->
+                    <div class="hero-mode-card" data-duration="120" id="card-mode-120">
+                        <div class="mode-icon">🏔️</div>
+                        <h3 class="mode-title">Endurance Test</h3>
+                        <div class="mode-duration-tag">2 Minutes Sustained</div>
+                        <p class="mode-desc">A sustained challenge testing unbroken concentration, stamina, and consistency over time.</p>
+                        <button class="btn btn-sm btn-outline card-action-btn">Start 2 Min Test</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Statistics for Logged-In User -->
+            <div class="dash-stats-section" id="dash-user-section">
+                <div class="section-header">
+                    <h2 class="section-title">Your Performance Dashboard</h2>
+                    <a href="#stats" class="btn btn-xs btn-outline">Full Analytics &rarr;</a>
+                </div>
+
+                <!-- Logged-in metrics -->
+                <div class="metrics-grid-4" id="dashboard-user-metrics" style="display: none;">
+                    <div class="metric-card">
+                        <div class="metric-label">Personal Best</div>
+                        <div class="metric-val val-mint" id="dash-pb-wpm">0.0</div>
+                        <small class="text-muted">Net WPM</small>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Average Speed</div>
+                        <div class="metric-val" id="dash-avg-wpm">0.0</div>
+                        <small class="text-muted">Net WPM</small>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Best Accuracy</div>
+                        <div class="metric-val" id="dash-best-acc">0%</div>
+                        <small class="text-muted">Character precision</small>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Tests Completed</div>
+                        <div class="metric-val" id="dash-total-tests">0</div>
+                        <small class="text-muted">Total attempts</small>
+                    </div>
+                </div>
+
+                <!-- Onboarding card for guests or users with 0 tests -->
+                <div class="onboarding-card" id="dashboard-onboarding">
+                    <h3 id="onboard-welcome-title">Ready to test your speed?</h3>
+                    <p id="onboard-welcome-sub">Take a practice test right now as a guest without registering, or create an account to save your results permanently and enter the 24-hour leaderboard.</p>
+                    <button class="btn btn-mint" onclick="window.location.hash='#test'">Take First Test</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: REAL-TIME TYPING TEST ENGINE       -->
+        <!-- ========================================== -->
+        <section id="view-test" class="app-view">
+            <div class="typing-view-container">
+                <!-- Top Control Bar -->
+                <div class="typing-top-bar">
+                    <div class="duration-selector">
+                        <span class="live-lbl" style="margin-right: 0.5rem;">Mode:</span>
+                        <button class="mode-duration-btn" data-duration="30" id="btn-mode-30">30s</button>
+                        <button class="mode-duration-btn active" data-duration="60" id="btn-mode-60">60s</button>
+                        <button class="mode-duration-btn" data-duration="120" id="btn-mode-120">120s</button>
+                    </div>
+
+                    <div class="live-metrics-bar">
+                        <div class="live-metric-item">
+                            <span class="live-lbl">Timer</span>
+                            <span class="live-num live-timer" id="typing-timer">1:00</span>
+                        </div>
+                        <div class="live-metric-item">
+                            <span class="live-lbl">Net WPM</span>
+                            <span class="live-num" id="typing-live-wpm">0</span>
+                        </div>
+                        <div class="live-metric-item">
+                            <span class="live-lbl">Accuracy</span>
+                            <span class="live-num" id="typing-live-acc">100%</span>
+                        </div>
+                        <div class="live-metric-item">
+                            <span class="live-lbl">Chars</span>
+                            <span class="live-num" style="font-size: 1.1rem;">
+                                <span class="text-mint" id="typing-live-correct">0</span> / 
+                                <span class="text-red" id="typing-live-incorrect">0</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <span class="status-badge status-idle" id="typing-status-badge">Waiting to Start</span>
+                </div>
+
+                <!-- Progress Track -->
+                <div class="progress-track">
+                    <div class="progress-fill" id="typing-progress-bar"></div>
+                </div>
+
+                <!-- Large Comfortable Passage Display Area -->
+                <div class="typing-passage-box" id="typing-passage-box" tabindex="0">
+                    <div class="typing-passage" id="typing-passage">
+                        <!-- Characters rendered dynamically via JS -->
+                    </div>
+                    <!-- Hidden input to capture keystrokes reliably on desktop and mobile -->
+                    <input type="text" id="typing-hidden-input" class="hidden-typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                </div>
+
+                <!-- Bottom Controls & Hints -->
+                <div class="typing-bottom-controls">
+                    <button class="btn btn-sm btn-outline" id="btn-typing-restart">
+                        <span>🔄 Restart Test</span>
+                    </button>
+                    <div class="shortcut-hint">
+                        <span>Press <span class="kbd-tag">Esc</span> to quickly restart &bull; Click anywhere on the passage to focus</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: DETAILED RESULTS & ANALYSIS       -->
+        <!-- ========================================== -->
+        <section id="view-results" class="app-view">
+            <div class="results-container">
+                <!-- Overview Header Card -->
+                <div class="results-header-card">
+                    <div class="results-score-row">
+                        <div class="hero-wpm-box">
+                            <span class="hero-wpm-label">Net Typing Speed</span>
+                            <div class="hero-wpm-number">
+                                <span id="res-net-wpm">0.0</span>
+                                <span class="hero-wpm-unit">WPM</span>
+                            </div>
+                            <span class="badge badge-mint" id="res-pb-badge" style="display: none; align-self: flex-start; margin-top: 0.5rem;">🎉 Personal Best!</span>
+                        </div>
+
+                        <div class="results-key-metrics">
+                            <div class="key-metric-sub">
+                                <div class="lbl">Raw WPM</div>
+                                <div class="val" id="res-raw-wpm">0.0</div>
+                            </div>
+                            <div class="key-metric-sub">
+                                <div class="lbl">Accuracy</div>
+                                <div class="val text-mint" id="res-accuracy">100%</div>
+                            </div>
+                            <div class="key-metric-sub">
+                                <div class="lbl">Duration</div>
+                                <div class="val" id="res-duration">60s</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Character Stats -->
+                    <div class="results-char-bar">
+                        <div class="char-stat-item">Correct Characters: <strong class="text-mint" id="res-correct-chars">0</strong></div>
+                        <div class="char-stat-item">Incorrect Characters: <strong class="text-red" id="res-incorrect-chars">0</strong></div>
+                        <div class="char-stat-item">Total Typed: <strong id="res-total-chars">0</strong></div>
+                        <div class="char-stat-item">Corrections &amp; Backspaces: <strong id="res-backspaces">0</strong></div>
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="btn btn-mint" id="btn-results-retry"><span>🔁 Try Again</span></button>
+                        <button class="btn btn-outline" id="btn-results-dashboard"><span>🏠 Dashboard</span></button>
+                        <a href="#leaderboard" class="btn btn-outline"><span>🏆 24h Leaderboard</span></a>
+                    </div>
+                </div>
+
+                <!-- Guest Claim Banner (Shown if not logged in) -->
+                <div class="guest-claim-banner" id="res-guest-banner" style="display: none;">
+                    <div>
+                        <strong>Want to preserve this score?</strong>
+                        <p>Create a free account or sign in to save your result permanently and claim your rank on the 24-hour leaderboard!</p>
+                    </div>
+                    <button class="btn btn-sm btn-mint" id="btn-results-claim">Claim Score</button>
+                </div>
+
+                <!-- Interactive Realistic QWERTY Keyboard Heatmap -->
+                <div class="keyboard-section">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Keystroke Heatmap Diagnostics</h2>
+                            <p class="text-secondary" style="font-size: 0.88rem; margin-top: 0.2rem;">Hover or click any key to inspect expected versus actual keystroke accuracy and substitutions.</p>
+                        </div>
+                    </div>
+                    
+                    <div id="results-keyboard-heatmap">
+                        <!-- Rendered by KeyboardHeatmap JS class -->
+                    </div>
+                </div>
+
+                <!-- Performance Insights & Speed Chart Grid -->
+                <div class="results-analysis-grid">
+                    <!-- Speed Chart -->
+                    <div class="analysis-card">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Speed Consistency Throughout Test</h3>
+                        <p class="text-muted" style="font-size: 0.82rem; margin-bottom: 1rem;">Tracking net WPM sampled per second.</p>
+                        <div class="chart-wrapper">
+                            <canvas id="results-speed-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Diagnostics & Weak Keys -->
+                    <div class="analysis-card">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Weakest Keys &amp; Substitutions</h3>
+                        <div style="margin-top: 0.8rem;">
+                            <span class="live-lbl">Most Frequent Misses:</span>
+                            <ul class="insights-list" id="res-weak-keys-list">
+                                <li class="text-muted">No errors detected.</li>
+                            </ul>
+                        </div>
+                        <div style="margin-top: 1rem;">
+                            <span class="live-lbl">Common Key Pairs:</span>
+                            <ul class="insights-list" id="res-subs-list">
+                                <li class="text-muted">None.</li>
+                            </ul>
+                        </div>
+                        <div style="margin-top: 1.2rem; background: var(--bg-base); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                            <span class="live-lbl text-mint">💡 Practice Recommendation:</span>
+                            <p id="res-recommendations" style="font-size: 0.85rem; margin-top: 0.2rem; color: var(--text-secondary);"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: ROLLING 24-HOUR LEADERBOARD        -->
+        <!-- ========================================== -->
+        <section id="view-leaderboard" class="app-view">
+            <div class="leaderboard-container">
+                <div class="section-header" style="margin-bottom: 0.5rem;">
+                    <div>
+                        <h1 class="hero-title" style="font-size: 2.4rem; margin-bottom: 0.4rem;">
+                            Rolling <span class="text-gradient">24-Hour Leaderboard</span>
+                        </h1>
+                        <p class="text-secondary" style="font-size: 0.95rem;">
+                            Scores remain eligible for exactly 24 hours from completion. Only each user's best qualifying attempt is ranked.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- User Rank Encouragement Banner -->
+                <div id="lb-user-rank-notice" style="display: none;"></div>
+
+                <!-- Filter Tabs & Refresh -->
+                <div class="lb-top-bar">
+                    <div class="lb-filters">
+                        <button class="lb-filter-btn active" data-duration="">All Durations</button>
+                        <button class="lb-filter-btn" data-duration="30">30s Sprint</button>
+                        <button class="lb-filter-btn" data-duration="60">1 Min Classic</button>
+                        <button class="lb-filter-btn" data-duration="120">2 Min Endurance</button>
+                    </div>
+                    <button class="btn btn-sm btn-outline" id="btn-lb-refresh">🔄 Refresh Scores</button>
+                </div>
+
+                <!-- Rankings Table -->
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Typist</th>
+                                <th>Net WPM</th>
+                                <th>Raw WPM</th>
+                                <th>Accuracy</th>
+                                <th>Duration</th>
+                                <th>Time Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody">
+                            <!-- Populated dynamically via leaderboard.js -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Recent Activity Feed -->
+                <div class="recent-activity-box">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.2rem;">Recent Activity (Last 24 Hours)</h3>
+                    <p class="text-muted" style="font-size: 0.82rem;">Live feed of qualifying typing tests recorded by the community.</p>
+                    <ul class="recent-list" id="lb-recent-activity-list">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: PERSONAL STATISTICS & HISTORY     -->
+        <!-- ========================================== -->
+        <section id="view-stats" class="app-view">
+            <div class="stats-container">
+                <!-- Unauthenticated Notice -->
+                <div id="stats-unauthenticated" class="onboarding-card" style="display: none; margin-top: 2rem;">
+                    <h3>Sign In to View Personal Statistics</h3>
+                    <p>Track your lifetime WPM progress, accuracy trends, full test history, and cumulative keyboard heatmaps.</p>
+                    <button class="btn btn-mint" onclick="window.authManager.openAuthModal('login')">Sign In Now</button>
+                </div>
+
+                <!-- Authenticated Stats Content -->
+                <div id="stats-content">
+                    <div class="section-header">
+                        <div>
+                            <h1 class="hero-title" style="font-size: 2.4rem; margin-bottom: 0.4rem;">
+                                Personal <span class="text-gradient">Performance Analytics</span>
+                            </h1>
+                            <p class="text-secondary" style="font-size: 0.95rem;">Detailed historical analysis of your typing speed, accuracy, and keyboard habits.</p>
+                        </div>
+                    </div>
+
+                    <!-- Lifetime KPI Cards -->
+                    <div class="metrics-grid-4" style="margin-bottom: 2rem;">
+                        <div class="metric-card">
+                            <div class="metric-label">All-Time PB</div>
+                            <div class="metric-val val-mint" id="stat-pb-wpm">0.0</div>
+                            <small class="text-muted">Net WPM</small>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Average Speed</div>
+                            <div class="metric-val" id="stat-avg-wpm">0.0</div>
+                            <small class="text-muted">Net WPM across all tests</small>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Best Accuracy</div>
+                            <div class="metric-val" id="stat-best-acc">0%</div>
+                            <small class="text-muted">Cleanest keystroke precision</small>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Tests Completed</div>
+                            <div class="metric-val" id="stat-total-tests">0</div>
+                            <small class="text-muted">Total verified attempts</small>
+                        </div>
+                    </div>
+
+                    <!-- Duration Breakdown Cards -->
+                    <div class="metrics-grid-4" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+                        <div class="metric-card">
+                            <div class="metric-label">30s Sprint Mode</div>
+                            <div class="metric-val" id="stat-d30-pb">-</div>
+                            <small class="text-muted" id="stat-d30-count">0 tests</small>
+                        </div>
+                        <div class="metric-card" style="border-color: var(--border-accent);">
+                            <div class="metric-label">60s Classic Mode</div>
+                            <div class="metric-val val-mint" id="stat-d60-pb">-</div>
+                            <small class="text-muted" id="stat-d60-count">0 tests</small>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">120s Endurance Mode</div>
+                            <div class="metric-val" id="stat-d120-pb">-</div>
+                            <small class="text-muted" id="stat-d120-count">0 tests</small>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="stats-charts-grid">
+                        <div class="analysis-card">
+                            <h3 style="font-size: 1.1rem; margin-bottom: 0.2rem;">Net WPM Progression</h3>
+                            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">Progression across chronological test attempts.</p>
+                            <div class="chart-wrapper">
+                                <canvas id="stats-wpm-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="analysis-card">
+                            <h3 style="font-size: 1.1rem; margin-bottom: 0.2rem;">Accuracy Trend</h3>
+                            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">Percentage accuracy consistency over time.</p>
+                            <div class="chart-wrapper">
+                                <canvas id="stats-acc-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cumulative Keyboard Heatmap -->
+                    <div class="keyboard-section">
+                        <div class="section-header">
+                            <div>
+                                <h3 style="font-size: 1.25rem;">Cumulative Keystroke Diagnostics</h3>
+                                <p class="text-secondary" style="font-size: 0.85rem; margin-top: 0.2rem;">Aggregated error distribution across your saved typing history.</p>
+                            </div>
+                        </div>
+                        <div id="stats-cumulative-heatmap"></div>
+                    </div>
+
+                    <!-- Test History Table -->
+                    <div class="section-header" style="margin-top: 2rem;">
+                        <h3 style="font-size: 1.25rem;">Complete Test History</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Net Speed</th>
+                                    <th>Raw WPM</th>
+                                    <th>Accuracy</th>
+                                    <th>Duration</th>
+                                    <th>Correct/Wrong</th>
+                                    <th>Date &amp; Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stats-history-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Data Management Actions -->
+                    <div class="stats-actions-row">
+                        <button class="btn btn-sm btn-outline" id="btn-stats-clear-history">Clear Test History</button>
+                        <button class="btn btn-sm btn-danger-icon" id="btn-stats-delete-account" style="padding: 0.45rem 0.9rem; border-radius: var(--radius-sm);">Delete Account</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODAL 1: AUTHENTICATION (LOGIN / REGISTER) -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-content">
+            <button class="modal-close-btn" id="auth-modal-close">&times;</button>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" id="tab-login-btn">Sign In</button>
+                <button class="auth-tab-btn" id="tab-register-btn">Create Account</button>
+            </div>
+
+            <!-- Guest claim reminder banner -->
+            <div id="auth-guest-claim-notice" style="display: none; background: var(--mint-soft); border: 1px solid var(--border-accent); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 1rem; color: var(--text-primary);">
+                🎉 Your latest test score will be automatically saved to your new or existing account!
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form-container">
+                <div class="auth-error-msg" id="login-error"></div>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label class="form-label" for="login-identifier">Username or Email</label>
+                        <input type="text" id="login-identifier" class="form-input" placeholder="e.g. demouser" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="login-password">Password</label>
+                        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-mint" id="btn-login-submit" style="width: 100%; margin-top: 0.75rem;">Sign In</button>
+                </form>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form-container" style="display: none;">
+                <div class="auth-error-msg" id="register-error"></div>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label class="form-label" for="reg-username">Username</label>
+                        <input type="text" id="reg-username" class="form-input" placeholder="e.g. speed_typist" minlength="3" maxlength="30" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-email">Email Address</label>
+                        <input type="email" id="reg-email" class="form-input" placeholder="name@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-password">Password (min. 6 characters)</label>
+                        <input type="password" id="reg-password" class="form-input" placeholder="••••••••" minlength="6" required>
+                        <div class="password-strength-container">
+                            <div class="strength-bar-track">
+                                <div class="strength-bar-fill" id="pass-strength-bar"></div>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Strength: <span id="pass-strength-text">-</span></small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-confirm-password">Confirm Password</label>
+                        <input type="password" id="reg-confirm-password" class="form-input" placeholder="••••••••" minlength="6" required>
+                    </div>
+                    <button type="submit" class="btn btn-mint" id="btn-reg-submit" style="width: 100%; margin-top: 0.75rem;">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 2: PAST TEST RESULT DETAILS & HEATMAP-->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="past-result-modal">
+        <div class="modal-content modal-content-lg">
+            <button class="modal-close-btn" id="past-modal-close">&times;</button>
+            <div style="margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.6rem; color: var(--mint);" id="past-res-wpm">0.0 Net WPM</h2>
+                <div style="font-size: 1rem; font-weight: 600;" id="past-res-acc">0% Accuracy</div>
+                <div class="text-muted" style="font-size: 0.85rem;" id="past-res-meta"></div>
+                <div class="text-secondary" style="font-size: 0.85rem; margin-top: 0.2rem;" id="past-res-chars"></div>
+            </div>
+
+            <div class="section-header" style="margin-bottom: 0.5rem;">
+                <h4 style="font-size: 1.05rem;">Original Keystroke Heatmap</h4>
+            </div>
+            <div id="modal-past-heatmap"></div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 3: ABOUT TYPEFLOW MICROPROJECT       -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="about-modal">
+        <div class="modal-content modal-content-lg">
+            <button class="modal-close-btn" id="about-modal-close">&times;</button>
+            <h2 style="font-size: 1.6rem; margin-bottom: 0.6rem;">About <span class="text-gradient">TypeFlow</span></h2>
+            <div class="hero-tagline-pill" style="margin-bottom: 1.2rem;">Every keystroke counts.</div>
+            
+            <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem;">
+                TypeFlow is a full-stack typing speed test and performance analytics platform engineered with a high-performance Java Spring Boot backend, Spring Security, MySQL / file-backed persistence, and a modern responsive vanilla frontend.
+            </p>
+
+            <div style="background: var(--bg-base); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 1.2rem;">
+                <h4 style="color: var(--mint); margin-bottom: 0.4rem;">Formulas &amp; Scoring Engine</h4>
+                <ul style="list-style: none; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+                    <li>&bull; <strong>Word Definition:</strong> Standard international convention of 5 characters = 1 word.</li>
+                    <li>&bull; <strong>Raw WPM:</strong> (Total characters typed / 5) &divide; Elapsed minutes.</li>
+                    <li>&bull; <strong>Net WPM:</strong> (Correct characters / 5) &divide; Elapsed minutes.</li>
+                    <li>&bull; <strong>Accuracy:</strong> (Correct characters / Total typed characters) &times; 100%.</li>
+                    <li>&bull; <strong>24-Hour Leaderboard:</strong> Strictly enforces a rolling 24-hour qualifying window on the server side.</li>
+                </ul>
+            </div>
+
+            <div style="background: var(--bg-base); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <h4 style="color: var(--mint); margin-bottom: 0.4rem;">Technology Architecture</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <div><strong>Backend:</strong> Java 17+, Spring Boot 3.3.4</div>
+                    <div><strong>Security:</strong> Spring Security, BCrypt</div>
+                    <div><strong>Database:</strong> MySQL 8.0+ / H2 Engine</div>
+                    <div><strong>Visuals:</strong> Vanilla CSS, Chart.js, Web Audio API</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Application Scripts -->
+    <script src="/js/sound.js"></script>
+    <script src="/js/keyboard.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/typing-engine.js"></script>
+    <script src="/js/results.js"></script>
+    <script src="/js/leaderboard.js"></script>
+    <script src="/js/stats.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
