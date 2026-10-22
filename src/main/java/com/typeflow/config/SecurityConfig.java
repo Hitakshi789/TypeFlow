@@ -57,9 +57,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/favicon.ico").permitAll()
                 // Public API endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/test/passage/**").permitAll()
-                .requestMatchers("/api/test/submit").permitAll()
-                .requestMatchers("/api/test/result/**").permitAll()
+                .requestMatchers("/api/test/**").permitAll()
                 .requestMatchers("/api/leaderboard/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 // Protected user endpoints

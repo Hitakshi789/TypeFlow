@@ -125,4 +125,52 @@ class TypingServiceTest {
         assertEquals(1, resp.getKeyErrors().size());
         assertEquals("e", resp.getKeyErrors().get(0).getExpectedKey());
     }
+
+    @Test
+    @DisplayName("Verify character-level scoring for partially correct words: expected 'world' typed 'worlf'")
+    void testPartialWordCharacterScoringModel() {
+        // When user types 'worlf' for expected 'world':
+        // Characters typed = 5 ('w', 'o', 'r', 'l', 'f')
+        // Correct characters = 4 ('w', 'o', 'r', 'l')
+        // Incorrect characters = 1 ('f' instead of 'd')
+        // In a 60-second test with 12 such words (60 characters total, 48 correct, 12 incorrect):
+        int totalChars = 60;
+        int correctChars = 48;
+        double elapsed = 60.0;
+
+        double rawWpm = typingService.calculateRawWpm(totalChars, elapsed);
+        double netWpm = typingService.calculateNetWpm(correctChars, elapsed);
+        double accuracy = typingService.calculateAccuracy(correctChars, totalChars);
+
+        // Raw WPM: 60 / 5 = 12.0 WPM
+        // Net WPM: 48 / 5 = 9.6 WPM
+        // Accuracy: (48 / 60) * 100 = 80.0%
+        assertEquals(12.0, rawWpm, 0.01, "Raw WPM should be 12.0");
+        assertEquals(9.6, netWpm, 0.01, "Net WPM should be 9.6");
+        assertEquals(80.0, accuracy, 0.01, "Accuracy should be 80.0%");
+    }
+
+    @Test
+    @DisplayName("Verify empty submission yields zero score and is handled safely")
+    void testEmptySubmissionHandling() {
+        TypingSubmissionDto sub = new TypingSubmissionDto();
+        sub.setDuration(60);
+        sub.setElapsedSeconds(60.0);
+        sub.setTotalChars(0);
+        sub.setCorrectChars(0);
+        sub.setIncorrectChars(0);
+        sub.setBackspaces(0);
+
+        when(typingResultRepository.save(any(TypingResult.class))).thenAnswer(invocation -> {
+            TypingResult tr = invocation.getArgument(0);
+            tr.setId(201L);
+            return tr;
+        });
+
+        TypingResultResponseDto resp = typingService.processSubmission(sub, null);
+        assertNotNull(resp);
+        assertEquals(0.0, resp.getRawWpm());
+        assertEquals(0.0, resp.getNetWpm());
+        assertEquals(0.0, resp.getAccuracy());
+    }
 }

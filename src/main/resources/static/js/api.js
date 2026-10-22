@@ -72,6 +72,10 @@ const API = {
         return this.request(url);
     },
 
+    async getWordBatch(count = 150) {
+        return this.request(`/api/test/words?count=${count}`);
+    },
+
     async submitTypingTest(submission) {
         return this.request('/api/test/submit', {
             method: 'POST',

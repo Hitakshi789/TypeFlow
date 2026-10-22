@@ -24,6 +24,8 @@ public interface TypingResultRepository extends JpaRepository<TypingResult, Long
     // Leaderboard query: retrieve all eligible scores within rolling 24 hours
     @Query("SELECT tr FROM TypingResult tr JOIN FETCH tr.user u " +
            "WHERE tr.user IS NOT NULL " +
+           "AND tr.totalChars > 0 " +
+           "AND tr.duration IN (30, 60, 120) " +
            "AND tr.completionTimestamp >= :since " +
            "AND (:duration IS NULL OR tr.duration = :duration) " +
            "ORDER BY tr.netWpm DESC, tr.accuracy DESC, tr.completionTimestamp ASC")
@@ -35,6 +37,8 @@ public interface TypingResultRepository extends JpaRepository<TypingResult, Long
     // Recent activity: newly recorded scores in the last 24h
     @Query("SELECT tr FROM TypingResult tr JOIN FETCH tr.user u " +
            "WHERE tr.user IS NOT NULL " +
+           "AND tr.totalChars > 0 " +
+           "AND tr.duration IN (30, 60, 120) " +
            "AND tr.completionTimestamp >= :since " +
            "ORDER BY tr.completionTimestamp DESC")
     List<TypingResult> findRecentActiveScores(

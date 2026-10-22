@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -155,5 +156,47 @@ class LeaderboardServiceTest {
         assertEquals(1, lb.size(), "Only 1 best entry per user should appear");
         assertEquals(85.0, lb.get(0).getNetWpm());
         assertEquals(11L, lb.get(0).getResultId());
+    }
+
+    @Test
+    @DisplayName("Verify honest empty state: returns empty list when no users have completed qualifying tests")
+    void testHonestEmptyLeaderboardState() {
+        when(typingResultRepository.findQualifyingLeaderboardResults(any(LocalDateTime.class), eq(60)))
+                .thenReturn(Collections.emptyList());
+
+        List<LeaderboardEntryDto> lb = leaderboardService.get24HourLeaderboard(60, null);
+
+        assertNotNull(lb);
+        assertTrue(lb.isEmpty(), "Leaderboard must be completely empty when no qualifying scores exist — never inject fake users!");
+    }
+
+    @Test
+    @DisplayName("Verify low-scoring tests by real registered users are included and ranked accurately")
+    void testLowScoreLegitimateUserQualifies() {
+        LocalDateTime now = LocalDateTime.now();
+        User slowUser = new User("slow_turtle", "turtle@test.com", "hash", "T");
+        slowUser.setId(99L);
+
+        TypingResult lowScore = new TypingResult();
+        lowScore.setId(55L);
+        lowScore.setUser(slowUser);
+        lowScore.setDuration(60);
+        lowScore.setNetWpm(18.5);
+        lowScore.setRawWpm(22.0);
+        lowScore.setAccuracy(84.0);
+        lowScore.setTotalChars(110);
+        lowScore.setCorrectChars(92);
+        lowScore.setCompletionTimestamp(now.minusHours(1));
+        lowScore.setExpirationTimestamp(now.minusHours(1).plusHours(24));
+
+        when(typingResultRepository.findQualifyingLeaderboardResults(any(LocalDateTime.class), eq(60)))
+                .thenReturn(List.of(lowScore));
+
+        List<LeaderboardEntryDto> lb = leaderboardService.get24HourLeaderboard(60, null);
+
+        assertEquals(1, lb.size());
+        assertEquals("slow_turtle", lb.get(0).getUsername());
+        assertEquals(18.5, lb.get(0).getNetWpm());
+        assertEquals(1, lb.get(0).getRank());
     }
 }

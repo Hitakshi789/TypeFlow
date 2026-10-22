@@ -9,112 +9,83 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class PassageService {
 
-    private final List<PassageDto> passages = new ArrayList<>();
+    // Curated high-frequency English typing word bank (10FastFingers style)
+    private static final String[] COMMON_WORDS = {
+        "the", "be", "of", "and", "a", "to", "in", "he", "have", "it",
+        "that", "for", "they", "I", "with", "as", "not", "on", "she", "at",
+        "by", "this", "we", "you", "do", "but", "his", "from", "they", "say",
+        "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
+        "their", "what", "so", "up", "out", "if", "about", "who", "get", "which",
+        "go", "me", "when", "make", "can", "like", "time", "no", "just", "him",
+        "know", "take", "people", "into", "year", "your", "good", "some", "could", "them",
+        "see", "other", "than", "then", "now", "look", "only", "come", "its", "over",
+        "think", "also", "back", "after", "use", "two", "how", "our", "work", "first",
+        "well", "way", "even", "new", "want", "because", "any", "these", "give", "day",
+        "most", "us", "great", "between", "need", "large", "under", "might", "never", "thought",
+        "world", "life", "while", "last", "right", "state", "place", "still", "light", "house",
+        "flow", "speed", "test", "every", "keystroke", "counts", "focus", "mind", "quick", "clean",
+        "found", "night", "high", "many", "point", "home", "water", "room", "mother", "area",
+        "money", "story", "fact", "month", "lot", "right", "study", "book", "eye", "job",
+        "word", "business", "issue", "side", "kind", "head", "far", "black", "long", "both",
+        "little", "house", "yes", "since", "around", "friend", "father", "until", "power", "hour",
+        "game", "often", "yet", "line", "end", "member", "law", "car", "city", "almost",
+        "include", "continue", "set", "later", "community", "name", "five", "once", "white", "least",
+        "learn", "change", "lead", "understand", "watch", "follow", "stop", "face", "create", "speak",
+        "read", "allow", "add", "spend", "grow", "open", "walk", "win", "offer", "remember",
+        "love", "consider", "appear", "buy", "wait", "serve", "die", "send", "expect", "build",
+        "stay", "fall", "cut", "reach", "kill", "remain", "suggest", "raise", "pass", "sell",
+        "require", "report", "decide", "pull", "return", "explain", "hope", "develop", "carry", "break",
+        "receive", "agree", "support", "hit", "produce", "eat", "cover", "catch", "draw", "choose",
+        "cause", "point", "listen", "simple", "music", "human", "sound", "number", "part", "field",
+        "space", "system", "group", "problem", "force", "river", "order", "early", "voice", "ready"
+    };
 
-    public PassageService() {
-        initPassages();
-    }
+    public PassageService() {}
 
-    private void initPassages() {
-        passages.add(new PassageDto(
-            "tech-1",
-            "The art of programming is the art of organizing complexity, of mastering multitude and avoiding chaos as effectively as possible. Clean code reads like well written prose. Every function should do one thing and do it with elegance. The architecture of modern software reflects human thought turned into executable logic, transforming abstract ideas into concrete systems that power our interconnected world.",
-            "The Art of Programming",
-            "Edsger W. Dijkstra",
-            "Technology"
-        ));
+    /**
+     * Generates a continuous, randomized sequence of clean English words.
+     * Prevents consecutive identical words so the typing rhythm stays fluid.
+     */
+    public List<String> generateWords(int count) {
+        int targetCount = Math.max(count, 50);
+        List<String> list = new ArrayList<>(targetCount);
+        String lastWord = "";
 
-        passages.add(new PassageDto(
-            "lit-1",
-            "The true measure of any typist is not merely rapid speed, but the rhythm of unbroken concentration. Words stream across the screen like music across a stave, each keystroke striking its precise note in harmony with the mind. When you enter a state of deep flow, the boundary between intention and action dissolves completely, leaving only the pure momentum of language unfolding forward.",
-            "Rhythm and Mind",
-            "Flow Philosophy",
-            "Literature"
-        ));
+        for (int i = 0; i < targetCount; i++) {
+            String word;
+            do {
+                int idx = ThreadLocalRandom.current().nextInt(COMMON_WORDS.length);
+                word = COMMON_WORDS[idx];
+            } while (word.equalsIgnoreCase(lastWord) && COMMON_WORDS.length > 1);
 
-        passages.add(new PassageDto(
-            "sci-1",
-            "In quantum mechanics, particles can exist in multiple states simultaneously until an observation forces a determination. This principle reveals a universe far stranger and more dynamic than classical physics ever imagined. Light behaves as both a wave and a particle, space and time bend under the weight of cosmic gravity, and the cosmos continues to expand into the boundless unknown.",
-            "Quantum Horizons",
-            "Cosmic Science",
-            "Science"
-        ));
-
-        passages.add(new PassageDto(
-            "hist-1",
-            "The invention of the mechanical typewriter in the late nineteenth century forever altered the speed of communication and human correspondence. The Christopher Sholes QWERTY layout was engineered to prevent mechanical typebars from jamming during rapid strokes. More than a century later, that same mechanical legacy guides the fingers of millions across digital keyboards worldwide.",
-            "The Typist's Legacy",
-            "Historical Technology",
-            "History"
-        ));
-
-        passages.add(new PassageDto(
-            "phil-1",
-            "We are what we repeatedly do. Excellence, then, is not an act, but a habit. True mastery in any craft arises from relentless deliberate practice, paying mindful attention to every small error, and refining your technique stroke by stroke. When patience unites with sustained focus, even the most formidable obstacles yield to persistent determination and quiet resolve.",
-            "Habit and Mastery",
-            "Philosophical Reflections",
-            "Philosophy"
-        ));
-
-        passages.add(new PassageDto(
-            "nature-1",
-            "Beneath the ocean surface lies a realm of silent wonder, where bioluminescent creatures drift through twilight depths like living constellations. Coral reefs pulse with vibrant life, supporting vast marine ecosystems through intricate symbiotic relationships that have flourished for millions of years in fragile equilibrium with the tides.",
-            "Oceanic Depths",
-            "Natural Wonders",
-            "Nature"
-        ));
-
-        passages.add(new PassageDto(
-            "tech-2",
-            "Distributed computing networks form the resilient backbone of contemporary civilization. Data packets traverse transcontinental fiber optic cables beneath oceans and across continents in mere milliseconds. Encryption algorithms safeguard digital privacy, while decentralized consensus protocols demonstrate how distributed trust can flourish without central authority.",
-            "Digital Architecture",
-            "Cyber Systems",
-            "Technology"
-        ));
-
-        passages.add(new PassageDto(
-            "lit-2",
-            "There is a unique stillness in early morning hours before the world awakens. In that quiet threshold, thought is lucid and creative energy flows without distraction. The keys respond with crisp precision, recording reflections, narratives, and visions that will soon echo in the minds of readers searching for clarity and inspiration.",
-            "Morning Reflections",
-            "Literary Flow",
-            "Literature"
-        ));
-    }
-
-    public PassageDto getRandomPassage(String excludeId) {
-        if (passages.isEmpty()) {
-            return new PassageDto("default", "The quick brown fox jumps over the lazy dog.", "Default", "Anonymous", "General");
+            list.add(word);
+            lastWord = word;
         }
-        if (passages.size() == 1) {
-            return passages.get(0);
-        }
-        List<PassageDto> eligible = new ArrayList<>();
-        for (PassageDto p : passages) {
-            if (excludeId == null || !p.getId().equalsIgnoreCase(excludeId)) {
-                eligible.add(p);
-            }
-        }
-        int index = ThreadLocalRandom.current().nextInt(eligible.size());
-        return eligible.get(index);
-    }
-
-    public List<PassageDto> getAllPassages() {
-        return Collections.unmodifiableList(passages);
-    }
-
-    public PassageDto getPassageById(String id) {
-        return passages.stream()
-                .filter(p -> p.getId().equalsIgnoreCase(id))
-                .findFirst()
-                .orElse(getRandomPassage(null));
+        return list;
     }
 
     /**
-     * Supplies an additional sentence or paragraph to seamlessly append
-     * when a fast typist approaches the end of their current passage.
+     * Generates a sufficiently large word-based passage (default 350 words,
+     * which exceeds what even a 150 WPM typist can type in 2 minutes: 300 words).
      */
+    public PassageDto getRandomPassage(String excludeId) {
+        // Generates 350 words initially — plenty for 30s, 60s, or 120s
+        List<String> words = generateWords(350);
+        String fullText = String.join(" ", words);
+        String id = "flow-" + UUID.randomUUID().toString().substring(0, 8);
+        return new PassageDto(id, fullText, "Continuous Word Flow", "TypeFlow Corpus", "Standard Words");
+    }
+
+    public List<String> getMoreWords(int count) {
+        return generateWords(count > 0 ? count : 100);
+    }
+
+    public PassageDto getPassageById(String id) {
+        return getRandomPassage(null);
+    }
+
     public String getNextParagraph(String currentId) {
-        PassageDto next = getRandomPassage(currentId);
-        return " " + next.getText();
+        List<String> words = generateWords(100);
+        return " " + String.join(" ", words);
     }
 }

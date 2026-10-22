@@ -90,8 +90,8 @@ class LeaderboardManager {
                     <td colspan="7" class="td-empty">
                         <div class="empty-state">
                             <span class="empty-icon">⏱️</span>
-                            <h4>No qualifying scores in the last 24 hours</h4>
-                            <p>Be the first typist to establish today's high score!</p>
+                            <h4>No scores yet. Be the first to set a record!</h4>
+                            <p>Complete a 30s, 60s, or 120s test to establish today's high score!</p>
                             <button class="btn btn-sm btn-mint" onclick="window.location.hash='#test'">Take the Test</button>
                         </div>
                     </td>

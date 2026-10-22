@@ -1,14 +1,15 @@
 /**
- * TypeFlow Typing Engine
- * Implements high-precision character-level typing test with passage auto-replenishment,
- * stable countdown timer, real-time WPM/accuracy, and Case A/B keystroke tracking.
+ * TypeFlow Typing Engine — 10FastFingers Word-by-Word Model
+ * Implements continuous word-based typing, spacebar evaluation, accurate character
+ * scoring (crediting partial matches), seamless word prefetching (never runs out),
+ * and precise keyboard heatmap diagnostics.
  */
 class TypingEngine {
     constructor() {
         this.duration = 60; // 30, 60, 120
         this.passageId = null;
-        this.passageText = '';
-        this.currentCharIndex = 0;
+        this.words = [];
+        this.currentWordIndex = 0;
         
         // State
         this.state = 'idle'; // 'idle', 'running', 'completed'
@@ -16,8 +17,11 @@ class TypingEngine {
         this.timerInterval = null;
         this.remainingSeconds = 60;
         this.elapsedSeconds = 0;
+        this.isSubmitting = false;
 
-        // Keystroke statistics
+        // Statistics
+        this.correctWords = 0;
+        this.incorrectWords = 0;
         this.correctChars = 0;
         this.incorrectChars = 0;
         this.totalTypedChars = 0;
@@ -26,7 +30,6 @@ class TypingEngine {
         // Key-level error tracking for Heatmap & Analytics
         // key -> { expected: N, correct: N, errors: N, substitutions: { 'wrong': count } }
         this.keyStats = {};
-        this.keyErrorsList = []; // for submission to backend
 
         // Speed history sampling every second for progress charts
         this.speedHistory = [];
@@ -39,8 +42,9 @@ class TypingEngine {
     }
 
     initDom() {
-        this.dom.passageContainer = document.getElementById('typing-passage');
-        this.dom.hiddenInput = document.getElementById('typing-hidden-input');
+        this.dom.wordsBox = document.getElementById('typing-passage-box');
+        this.dom.wordsStream = document.getElementById('typing-words-stream');
+        this.dom.wordInput = document.getElementById('typing-word-input');
         this.dom.timerDisplay = document.getElementById('typing-timer');
         this.dom.wpmDisplay = document.getElementById('typing-live-wpm');
         this.dom.accuracyDisplay = document.getElementById('typing-live-acc');
@@ -66,25 +70,29 @@ class TypingEngine {
             this.restartTest();
         });
 
-        // Typing container click focuses hidden input
-        this.dom.passageContainer?.addEventListener('click', () => {
+        // Words box click focuses input field
+        this.dom.wordsBox?.addEventListener('click', () => {
             this.focusInput();
         });
 
-        // Prevent pasting
-        this.dom.hiddenInput?.addEventListener('paste', (e) => {
+        // Prevent pasting into typing input
+        this.dom.wordInput?.addEventListener('paste', (e) => {
             e.preventDefault();
             window.showToast?.('Pasting is disabled for fair evaluation.', 'warning');
         });
 
-        // Keydown listener on hidden input
-        this.dom.hiddenInput?.addEventListener('keydown', (e) => {
+        // Real-time input listener
+        this.dom.wordInput?.addEventListener('input', () => {
+            this.handleInput();
+        });
+
+        // Keydown listener for Space, Backspace, Enter, Esc
+        this.dom.wordInput?.addEventListener('keydown', (e) => {
             this.handleKeyDown(e);
         });
 
-        // Global shortcut: Tab + Enter or Escape to restart test
+        // Global shortcut: Escape to restart test
         window.addEventListener('keydown', (e) => {
-            // If typing view is active
             const testSection = document.getElementById('view-test');
             if (testSection && testSection.classList.contains('active')) {
                 if (e.key === 'Escape') {
@@ -96,8 +104,8 @@ class TypingEngine {
     }
 
     focusInput() {
-        if (this.dom.hiddenInput && this.state !== 'completed') {
-            this.dom.hiddenInput.focus();
+        if (this.dom.wordInput && this.state !== 'completed') {
+            this.dom.wordInput.focus();
         }
     }
 
@@ -117,92 +125,290 @@ class TypingEngine {
         this.restartTest();
     }
 
-    async loadPassage(excludeId = null) {
+    async loadPassage() {
         try {
-            if (this.dom.passageContainer) {
-                this.dom.passageContainer.innerHTML = '<div class="passage-loading"><div class="spinner"></div> Generating curated passage...</div>';
+            if (this.dom.wordsStream) {
+                this.dom.wordsStream.innerHTML = '<div class="passage-loading"><div class="spinner"></div> Generating word sequence...</div>';
             }
-            const passage = await API.getRandomPassage(excludeId);
+            const passage = await API.getRandomPassage();
             this.passageId = passage.id;
-            this.passageText = passage.text;
-            this.renderPassage();
+            
+            // Split into clean words
+            const rawWords = passage.text.trim().split(/\s+/);
+            this.words = rawWords.filter(w => w.length > 0);
+            
+            // Ensure at least 350 words so fast typists never run out
+            if (this.words.length < 300) {
+                const more = await API.getWordBatch(150);
+                if (more && Array.isArray(more)) {
+                    this.words = this.words.concat(more);
+                }
+            }
+
+            this.renderWords();
         } catch (err) {
-            console.error('Error loading passage:', err);
-            // Fallback default passage
-            this.passageId = 'default-fallback';
-            this.passageText = 'The art of programming is the art of organizing complexity, of mastering multitude and avoiding chaos as effectively as possible. Clean code reads like well written prose. Every function should do one thing and do it with elegance.';
-            this.renderPassage();
+            console.error('Error loading word sequence:', err);
+            // Fallback word bank
+            this.words = [
+                "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "not", "on", "with", "he", "as",
+                "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will",
+                "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which",
+                "go", "me", "when", "make", "can", "like", "time", "no", "just", "him", "know", "take", "people", "into", "year",
+                "your", "good", "some", "could", "them", "see", "other", "than", "then", "now", "look", "only", "come", "its",
+                "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", "way", "even",
+                "new", "want", "because", "any", "these", "give", "day", "most", "us", "flow", "speed", "test", "every", "counts"
+            ];
+            this.renderWords();
         }
     }
 
-    renderPassage() {
-        if (!this.dom.passageContainer) return;
-        this.dom.passageContainer.innerHTML = '';
+    renderWords() {
+        if (!this.dom.wordsStream) return;
+        this.dom.wordsStream.innerHTML = '';
 
         const frag = document.createDocumentFragment();
-        for (let i = 0; i < this.passageText.length; i++) {
+        this.words.forEach((word, idx) => {
             const span = document.createElement('span');
-            span.className = 'char-char char-untyped';
-            span.setAttribute('data-idx', i);
-            const ch = this.passageText.charAt(i);
-            span.textContent = ch === ' ' ? ' ' : ch;
-            if (ch === ' ') {
-                span.classList.add('char-space');
-            }
+            span.className = 'word';
+            span.id = `word-${idx}`;
+            span.setAttribute('data-idx', idx);
+            span.textContent = word;
             frag.appendChild(span);
-        }
-        this.dom.passageContainer.appendChild(frag);
-        this.currentCharIndex = 0;
-        this.updateCursorHighlight();
+        });
+
+        this.dom.wordsStream.appendChild(frag);
+        this.currentWordIndex = 0;
+        this.updateActiveWord();
     }
 
-    updateCursorHighlight() {
-        const allSpans = this.dom.passageContainer.querySelectorAll('.char-char');
-        allSpans.forEach(span => span.classList.remove('char-current'));
-
-        if (this.currentCharIndex < allSpans.length) {
-            const currentSpan = allSpans[this.currentCharIndex];
-            currentSpan.classList.add('char-current');
-            
-            // Auto-scroll passage if cursor moves down
-            const container = this.dom.passageContainer;
-            const spanOffset = currentSpan.offsetTop;
-            const containerScroll = container.scrollTop;
-            const containerHeight = container.clientHeight;
-
-            if (spanOffset > containerScroll + containerHeight - 80) {
-                container.scrollTop = spanOffset - 60;
-            } else if (spanOffset < containerScroll) {
-                container.scrollTop = Math.max(0, spanOffset - 20);
-            }
-        }
-    }
-
-    async appendNextPassageText() {
+    async prefetchMoreWords() {
         try {
-            const data = await API.getNextPassage(this.passageId);
-            if (data && data.text) {
-                const additionalText = data.text;
-                const startIndex = this.passageText.length;
-                this.passageText += additionalText;
+            const more = await API.getWordBatch(150);
+            if (more && Array.isArray(more) && more.length > 0) {
+                const startIndex = this.words.length;
+                this.words = this.words.concat(more);
 
                 const frag = document.createDocumentFragment();
-                for (let i = 0; i < additionalText.length; i++) {
+                more.forEach((word, idx) => {
                     const span = document.createElement('span');
-                    span.className = 'char-char char-untyped';
-                    span.setAttribute('data-idx', startIndex + i);
-                    const ch = additionalText.charAt(i);
-                    span.textContent = ch === ' ' ? ' ' : ch;
-                    if (ch === ' ') {
-                        span.classList.add('char-space');
-                    }
+                    span.className = 'word';
+                    span.id = `word-${startIndex + idx}`;
+                    span.setAttribute('data-idx', startIndex + idx);
+                    span.textContent = word;
                     frag.appendChild(span);
-                }
-                this.dom.passageContainer.appendChild(frag);
+                });
+                this.dom.wordsStream.appendChild(frag);
             }
         } catch (e) {
-            console.error('Failed to append passage text', e);
+            console.error('Failed to prefetch additional words', e);
         }
+    }
+
+    updateActiveWord() {
+        // Remove active class from all
+        const currentActive = this.dom.wordsStream.querySelector('.word.word-active');
+        if (currentActive) {
+            currentActive.classList.remove('word-active');
+        }
+
+        const nextWordEl = document.getElementById(`word-${this.currentWordIndex}`);
+        if (nextWordEl) {
+            nextWordEl.classList.add('word-active');
+
+            // 10FastFingers Rolling Line Scrolling
+            // Check if active word has wrapped to a new line
+            const firstWordEl = document.getElementById('word-0');
+            if (firstWordEl && this.dom.wordsBox) {
+                const firstTop = firstWordEl.offsetTop;
+                const activeTop = nextWordEl.offsetTop;
+                const lineDiff = activeTop - firstTop;
+
+                // When moving past line 1, scroll container so active line is always near the top
+                if (lineDiff > 35) {
+                    this.dom.wordsBox.scrollTop = lineDiff - 20;
+                } else {
+                    this.dom.wordsBox.scrollTop = 0;
+                }
+            }
+        }
+
+        // Prefetch when within 40 words of the end (guarantees words never run out)
+        if (this.currentWordIndex >= this.words.length - 40) {
+            this.prefetchMoreWords();
+        }
+    }
+
+    handleInput() {
+        if (this.state === 'completed') return;
+
+        const val = this.dom.wordInput.value;
+
+        // Start test on first valid typed character
+        if (this.state === 'idle' && val.trim().length > 0) {
+            this.startTest();
+        }
+
+        // Real-time prefix validation for tactile feedback
+        const currentExpected = this.words[this.currentWordIndex] || '';
+        const currentTyped = val.trim();
+
+        if (currentTyped.length > 0 && !currentExpected.startsWith(currentTyped)) {
+            this.dom.wordInput.classList.add('input-mistake');
+        } else {
+            this.dom.wordInput.classList.remove('input-mistake');
+        }
+    }
+
+    handleKeyDown(e) {
+        if (this.state === 'completed') return;
+
+        // Prevent browser page scroll on Space
+        if (e.key === ' ' || e.code === 'Space') {
+            e.preventDefault();
+
+            // Prevent key-repeat from firing multiple times if held down
+            if (e.repeat) return;
+
+            const typed = this.dom.wordInput.value.trim();
+
+            // Ignore empty submissions (pressing Space on empty input does nothing)
+            if (typed === '') {
+                this.dom.wordInput.value = '';
+                return;
+            }
+
+            // Start test if not already running
+            if (this.state === 'idle') {
+                this.startTest();
+            }
+
+            // Evaluate the completed word
+            this.submitWord(typed);
+            return;
+        }
+
+        // Track backspace count
+        if (e.key === 'Backspace') {
+            this.backspaces++;
+            window.soundEffects?.playClick(false);
+            return;
+        }
+
+        // Prevent Enter from accidentally advancing
+        if (e.key === 'Enter') {
+            e.preventDefault();
+        }
+    }
+
+    submitWord(typedWord) {
+        if (this.currentWordIndex >= this.words.length) return;
+
+        const expectedWord = this.words[this.currentWordIndex];
+        const isMatch = (typedWord === expectedWord);
+        const wordEl = document.getElementById(`word-${this.currentWordIndex}`);
+
+        if (isMatch) {
+            this.correctWords++;
+            if (wordEl) {
+                wordEl.classList.remove('word-active');
+                wordEl.classList.add('word-correct');
+            }
+            window.soundEffects?.playClick(false);
+
+            // Calculate character accuracy & key error metrics for exact match
+            for (let i = 0; i < expectedWord.length; i++) {
+                const ch = expectedWord[i];
+                this.correctChars++;
+                this.recordKeySuccess(ch);
+            }
+            this.totalTypedChars += expectedWord.length;
+        } else {
+            this.incorrectWords++;
+            if (wordEl) {
+                wordEl.classList.remove('word-active');
+                wordEl.classList.add('word-incorrect');
+            }
+            window.soundEffects?.playError();
+
+            // Calculate character-level accuracy for partially correct words
+            // (e.g. expected "world", typed "worlf" -> 4 correct, 1 incorrect)
+            const minLen = Math.min(typedWord.length, expectedWord.length);
+            for (let i = 0; i < minLen; i++) {
+                const expCh = expectedWord[i];
+                const actCh = typedWord[i];
+                if (expCh === actCh) {
+                    this.correctChars++;
+                    this.recordKeySuccess(expCh);
+                } else {
+                    this.incorrectChars++;
+                    this.recordKeySubstitution(expCh, actCh);
+                }
+            }
+
+            // Extra characters typed beyond expected word length
+            if (typedWord.length > expectedWord.length) {
+                for (let i = minLen; i < typedWord.length; i++) {
+                    this.incorrectChars++;
+                    this.recordKeyExtra(typedWord[i]);
+                }
+            }
+
+            // Missed characters when typed word was shorter
+            if (expectedWord.length > typedWord.length) {
+                for (let i = minLen; i < expectedWord.length; i++) {
+                    this.recordKeyOmission(expectedWord[i]);
+                }
+            }
+
+            this.totalTypedChars += typedWord.length;
+        }
+
+        // Clear input field for the next word
+        this.dom.wordInput.value = '';
+        this.dom.wordInput.classList.remove('input-mistake');
+
+        // Advance to next word
+        this.currentWordIndex++;
+        this.updateActiveWord();
+        this.updateLiveStats();
+    }
+
+    recordKeySuccess(char) {
+        const key = char.toLowerCase();
+        if (!this.keyStats[key]) {
+            this.keyStats[key] = { expected: 0, correct: 0, errors: 0, substitutions: {} };
+        }
+        this.keyStats[key].expected++;
+        this.keyStats[key].correct++;
+    }
+
+    recordKeySubstitution(expectedChar, actualChar) {
+        const expKey = expectedChar.toLowerCase();
+        const actKey = actualChar.toLowerCase();
+        if (!this.keyStats[expKey]) {
+            this.keyStats[expKey] = { expected: 0, correct: 0, errors: 0, substitutions: {} };
+        }
+        this.keyStats[expKey].expected++;
+        this.keyStats[expKey].errors++;
+        this.keyStats[expKey].substitutions[actKey] = (this.keyStats[expKey].substitutions[actKey] || 0) + 1;
+    }
+
+    recordKeyExtra(extraChar) {
+        const key = extraChar.toLowerCase();
+        if (!this.keyStats[key]) {
+            this.keyStats[key] = { expected: 0, correct: 0, errors: 0, substitutions: {} };
+        }
+        this.keyStats[key].errors++;
+    }
+
+    recordKeyOmission(missedChar) {
+        const key = missedChar.toLowerCase();
+        if (!this.keyStats[key]) {
+            this.keyStats[key] = { expected: 0, correct: 0, errors: 0, substitutions: {} };
+        }
+        this.keyStats[key].expected++;
+        this.keyStats[key].errors++;
+        this.keyStats[key].substitutions['[MISSED]'] = (this.keyStats[key].substitutions['[MISSED]'] || 0) + 1;
     }
 
     startTest() {
@@ -210,13 +416,14 @@ class TypingEngine {
         this.startTime = performance.now();
         this.speedHistory = [];
         this.lastSampleTime = 0;
-        
+        this.isSubmitting = false;
+
         if (this.dom.statusBadge) {
             this.dom.statusBadge.textContent = 'Typing in Progress';
             this.dom.statusBadge.className = 'status-badge status-active';
         }
 
-        // High precision interval using performance.now()
+        // High-precision elapsed time interval
         this.timerInterval = setInterval(() => {
             const now = performance.now();
             const elapsed = (now - this.startTime) / 1000;
@@ -227,7 +434,7 @@ class TypingEngine {
             this.updateTimerDisplay();
             this.updateLiveStats();
 
-            // Sample speed history every ~1 second
+            // Sample speed history every ~1 second for consistency graphs
             if (Math.floor(elapsed) > this.lastSampleTime && elapsed <= this.duration) {
                 this.lastSampleTime = Math.floor(elapsed);
                 const currentNetWpm = this.calculateNetWpm(elapsed);
@@ -254,112 +461,6 @@ class TypingEngine {
             const pct = Math.min(100, (this.elapsedSeconds / this.duration) * 100);
             this.dom.progressBar.style.width = `${pct}%`;
         }
-    }
-
-    handleKeyDown(e) {
-        if (this.state === 'completed') return;
-
-        // Ignore meta/modifier keys
-        if (e.ctrlKey || e.altKey || e.metaKey) return;
-        if (e.key === 'Shift' || e.key === 'CapsLock' || e.key === 'Control' || e.key === 'Alt') return;
-
-        // Start on first valid typing stroke
-        if (this.state === 'idle') {
-            if (e.key.length === 1 || e.key === ' ') {
-                this.startTest();
-            } else {
-                return;
-            }
-        }
-
-        // Handle Backspace
-        if (e.key === 'Backspace') {
-            e.preventDefault();
-            this.handleBackspace();
-            return;
-        }
-
-        // Single printable character
-        if (e.key.length === 1) {
-            e.preventDefault();
-            this.handleCharacterInput(e.key);
-        }
-    }
-
-    handleBackspace() {
-        if (this.currentCharIndex <= 0) return;
-
-        this.backspaces++;
-        this.currentCharIndex--;
-
-        const span = this.dom.passageContainer.querySelector(`.char-char[data-idx="${this.currentCharIndex}"]`);
-        if (span) {
-            if (span.classList.contains('char-correct')) {
-                this.correctChars = Math.max(0, this.correctChars - 1);
-            } else if (span.classList.contains('char-error')) {
-                this.incorrectChars = Math.max(0, this.incorrectChars - 1);
-            }
-            this.totalTypedChars = Math.max(0, this.totalTypedChars - 1);
-
-            span.className = 'char-char char-untyped';
-            if (this.passageText.charAt(this.currentCharIndex) === ' ') {
-                span.classList.add('char-space');
-            }
-        }
-
-        window.soundEffects?.playClick(false);
-        this.updateCursorHighlight();
-        this.updateLiveStats();
-    }
-
-    handleCharacterInput(typedChar) {
-        if (this.currentCharIndex >= this.passageText.length) {
-            return;
-        }
-
-        const expectedChar = this.passageText.charAt(this.currentCharIndex);
-        const span = this.dom.passageContainer.querySelector(`.char-char[data-idx="${this.currentCharIndex}"]`);
-        const isMatch = (typedChar === expectedChar);
-
-        this.totalTypedChars++;
-
-        // Track stats for key error heatmap
-        const expLower = expectedChar.toLowerCase();
-        if (!this.keyStats[expLower]) {
-            this.keyStats[expLower] = { expected: 0, correct: 0, errors: 0, substitutions: {} };
-        }
-        this.keyStats[expLower].expected++;
-
-        if (isMatch) {
-            this.correctChars++;
-            this.keyStats[expLower].correct++;
-            if (span) {
-                span.className = 'char-char char-correct';
-            }
-            window.soundEffects?.playClick(expectedChar === ' ');
-        } else {
-            this.incorrectChars++;
-            this.keyStats[expLower].errors++;
-            
-            // Case A: Expected key vs actual typed key
-            const typedLower = typedChar.toLowerCase();
-            this.keyStats[expLower].substitutions[typedLower] = (this.keyStats[expLower].substitutions[typedLower] || 0) + 1;
-
-            if (span) {
-                span.className = 'char-char char-error';
-            }
-            window.soundEffects?.playError();
-        }
-
-        this.currentCharIndex++;
-
-        // Auto replenish if near the end (15 chars away)
-        if (this.currentCharIndex >= this.passageText.length - 20) {
-            this.appendNextPassageText();
-        }
-
-        this.updateCursorHighlight();
-        this.updateLiveStats();
     }
 
     calculateRawWpm(elapsedSec = null) {
@@ -395,11 +496,25 @@ class TypingEngine {
     }
 
     async endTest() {
+        if (this.isSubmitting) return;
+        this.isSubmitting = true;
+
         clearInterval(this.timerInterval);
         this.state = 'completed';
-        this.elapsedSeconds = this.duration; // Standard completed duration
+        this.elapsedSeconds = this.duration; // Use standard completed duration
         this.remainingSeconds = 0;
         this.updateTimerDisplay();
+
+        // If user typed characters in the input field when time expired, evaluate them
+        const remainingInput = this.dom.wordInput ? this.dom.wordInput.value.trim() : '';
+        if (remainingInput.length > 0) {
+            this.submitWord(remainingInput);
+        }
+
+        // Freeze input
+        if (this.dom.wordInput) {
+            this.dom.wordInput.disabled = true;
+        }
 
         if (this.dom.statusBadge) {
             this.dom.statusBadge.textContent = 'Test Completed';
@@ -454,17 +569,29 @@ class TypingEngine {
     restartTest() {
         clearInterval(this.timerInterval);
         this.state = 'idle';
-        this.currentCharIndex = 0;
+        this.isSubmitting = false;
+        this.currentWordIndex = 0;
         this.startTime = null;
         this.remainingSeconds = this.duration;
         this.elapsedSeconds = 0;
+        this.correctWords = 0;
+        this.incorrectWords = 0;
         this.correctChars = 0;
         this.incorrectChars = 0;
         this.totalTypedChars = 0;
         this.backspaces = 0;
         this.keyStats = {};
-        this.keyErrorsList = [];
         this.speedHistory = [];
+
+        if (this.dom.wordInput) {
+            this.dom.wordInput.disabled = false;
+            this.dom.wordInput.value = '';
+            this.dom.wordInput.classList.remove('input-mistake');
+        }
+
+        if (this.dom.wordsBox) {
+            this.dom.wordsBox.scrollTop = 0;
+        }
 
         this.updateTimerDisplay();
         this.updateLiveStats();
@@ -474,7 +601,7 @@ class TypingEngine {
             this.dom.statusBadge.className = 'status-badge status-idle';
         }
 
-        this.loadPassage(this.passageId);
+        this.loadPassage();
         setTimeout(() => this.focusInput(), 100);
     }
 }

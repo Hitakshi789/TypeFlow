@@ -692,15 +692,14 @@ body::before {
     transition: width 0.1s linear;
 }
 
-/* Typing Passage Area */
-.typing-passage-box {
+/* 10FastFingers Word-based Typing Display Area */
+.typing-passage-box, .typing-words-box {
     background: var(--bg-surface);
     border: 2px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    padding: 2.2rem 2.4rem;
-    min-height: 220px;
-    max-height: 280px;
-    overflow-y: hidden;
+    padding: 1.4rem 1.8rem;
+    height: 140px;
+    overflow: hidden;
     position: relative;
     cursor: text;
     user-select: none;
@@ -708,8 +707,81 @@ body::before {
     transition: border-color var(--transition-fast);
 }
 
-.typing-passage-box:focus-within, .typing-passage-box:hover {
+.typing-passage-box:focus-within, .typing-passage-box:hover,
+.typing-words-box:focus-within, .typing-words-box:hover {
     border-color: var(--border-accent);
+}
+
+.typing-words-stream {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 1.55rem;
+    line-height: 2.0;
+    transition: margin-top 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.word {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 6px;
+    color: var(--text-muted);
+    transition: all 0.12s ease;
+    border: 1px solid transparent;
+}
+
+.word.word-active {
+    color: var(--text-primary);
+    background: var(--bg-surface-elevated);
+    border-color: var(--border-accent);
+    box-shadow: 0 0 12px var(--mint-glow);
+}
+
+.word.word-correct {
+    color: var(--mint) !important;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.word.word-incorrect {
+    color: var(--error-red) !important;
+    background: var(--error-bg);
+    text-decoration: line-through;
+}
+
+/* Word-by-word Focused Input Field */
+.word-input-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.4rem;
+    width: 100%;
+}
+
+.typing-word-input {
+    width: 100%;
+    max-width: 480px;
+    padding: 0.85rem 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    color: var(--text-primary);
+    background: var(--bg-base);
+    border: 2px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    text-align: center;
+    outline: none;
+    transition: all var(--transition-fast);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.typing-word-input:focus {
+    border-color: var(--mint);
+    box-shadow: 0 0 18px var(--mint-glow);
+}
+
+.typing-word-input.input-mistake {
+    border-color: var(--error-red) !important;
+    color: var(--error-red) !important;
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.35) !important;
 }
 
 .hidden-typing-input {
@@ -718,61 +790,6 @@ body::before {
     pointer-events: none;
     top: 0;
     left: 0;
-}
-
-/* Characters rendering */
-.typing-passage {
-    font-family: var(--font-mono);
-    font-size: 1.65rem;
-    line-height: 1.8;
-    letter-spacing: 0.5px;
-    word-break: break-word;
-}
-
-.char-char {
-    position: relative;
-    transition: color 0.05s ease, background-color 0.05s ease;
-}
-
-.char-untyped {
-    color: var(--text-muted);
-}
-
-.char-correct {
-    color: var(--mint);
-}
-
-.char-error {
-    color: var(--error-red);
-    background-color: var(--error-bg);
-    border-radius: 3px;
-    text-decoration: underline wavy var(--error-red);
-}
-
-.char-current {
-    color: var(--text-primary);
-    background: rgba(16, 185, 129, 0.2);
-    border-radius: 3px;
-}
-
-.char-current::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -2px;
-    width: 100%;
-    height: 3px;
-    background-color: var(--mint);
-    animation: blinkCursor 0.9s infinite;
-}
-
-@keyframes blinkCursor {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
-.char-space {
-    margin: 0 0.15em;
 }
 
 /* Typing Bottom Controls */

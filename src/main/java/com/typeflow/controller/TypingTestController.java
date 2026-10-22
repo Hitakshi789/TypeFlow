@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,6 +40,13 @@ public class TypingTestController {
             @RequestParam(required = false) String excludeId) {
         PassageDto passage = passageService.getRandomPassage(excludeId);
         return ResponseEntity.ok(ApiResponse.success(passage));
+    }
+
+    @GetMapping("/words")
+    public ResponseEntity<ApiResponse<List<String>>> getWordBatch(
+            @RequestParam(defaultValue = "150") int count) {
+        List<String> words = passageService.getMoreWords(count);
+        return ResponseEntity.ok(ApiResponse.success(words));
     }
 
     @GetMapping("/passage/next")
